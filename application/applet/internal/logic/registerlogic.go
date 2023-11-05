@@ -48,6 +48,9 @@ func (l *RegisterLogic) Register(req *types.RegisterRequest) (resp *types.Regist
 		req.Password = encrypt.EncPassword(req.Password)
 	}
 	req.VerificationCode = strings.TrimSpace(req.VerificationCode)
+	if len(req.VerificationCode) == 0 {
+		return nil, code.VerificationCodeEmpty
+	}
 	err = checkVerificationCode(l.svcCtx.BizRedis, req.Mobile, req.VerificationCode)
 	if err != nil {
 		logx.Errorf("checkVerificationCode error: %v", err)

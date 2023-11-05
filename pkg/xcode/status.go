@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type Status struct {
@@ -58,6 +59,26 @@ func (s *Status) Details() []interface{} {
 	}
 
 	return details
+}
+
+func (s *Status) WithDetails(msgs ...proto.Message) (*Status, error) {
+	for _, msg := range msgs {
+		anyMsg, err := anypb.New(msg)
+		if err != nil {
+			return s, err
+		}
+		s.sts.Details = append(s.sts.Details, anyMsg)
+	}
+
+	return s, nil
+}
+
+func (s *Status) Proto() *types.Status {
+	return s.sts
+}
+
+func FromCode(code Code) *Status {
+	return &Status{sts: &types.Status{Code: int32(code.Code()), Message: code.Message()}}
 }
 
 func FromProto(pbMsg proto.Message) XCode {
@@ -115,6 +136,49 @@ func CodeFromError(err error) XCode {
 	}
 
 	return ServerErr
+}
+
+func FromError(err error) *status.Status {
+	err = errors.Cause(err)
+	var code XCode
+	if errors.As(err, &code) {
+		grpcStatus, err := gRPCStatusFromXcode(code)
+		if err == nil {
+			return grpcStatus
+		}
+	}
+
+	var grpcStatus *status.Status
+	switch err {
+	case context.Canceled:
+		grpcStatus, _ = gRPCStatusFromXcode(Canceled)
+	case context.DeadlineExceeded:
+		grpcStatus, _ = gRPCStatusFromXcode(Deadline)
+	default:
+		grpcStatus, _ = status.FromError(err)
+	}
+
+	return grpcStatus
+}
+
+func gRPCStatusFromXcode(code XCode) (*status.Status, error) {
+	var sts *Status
+	switch v := code.(type) {
+	case *Status:
+		sts = v
+	case Code:
+		sts = FromCode(v)
+	default:
+		sts = Error(Code{code.Code(), code.Message()})
+		for _, detail := range code.Details() {
+			if msg, ok := detail.(proto.Message); ok {
+				_, _ = sts.WithDetails(msg)
+			}
+		}
+	}
+
+	stas := status.New(codes.Unknown, strconv.Itoa(sts.Code()))
+	return stas.WithDetails(sts.Proto())
 }
 
 func GrpcStatusToXCode(gstatus *status.Status) XCode {
