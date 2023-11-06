@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	prefixActivation = "biz#activation#%s"
+	prefixVerification = "biz#verification#%s"
 )
 
 type RegisterLogic struct {

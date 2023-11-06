@@ -1,0 +1,20 @@
+Name: article-api
+Host: 0.0.0.0
+Port: 8889
+Auth:
+  AccessSecret: xxxxxxxxxx
+  AccessExpire: 604800
+  RefreshSecret: XXXXXXXXXXXXXXX
+  RefreshExpire: 604800
+Cos:
+  ServiceURL: x
+  BucketURL: x
+  SecretID: x
+  SecretKey: string
+  TimeoutSec: 3
+ArticleRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: article.rpc
+  NonBlock: true

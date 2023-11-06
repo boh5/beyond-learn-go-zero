@@ -5,19 +5,19 @@ import (
 	"flag"
 	"fmt"
 
-	"beyond-learn-go-zero/application/user/rpc/internal/config"
-	"beyond-learn-go-zero/application/user/rpc/internal/server"
-	"beyond-learn-go-zero/application/user/rpc/internal/svc"
-	"beyond-learn-go-zero/application/user/rpc/service"
+	"beyond-learn-go-zero/application/article/rpc/internal/config"
+	"beyond-learn-go-zero/application/article/rpc/internal/server"
+	"beyond-learn-go-zero/application/article/rpc/internal/svc"
+	"beyond-learn-go-zero/application/article/rpc/pb"
 
 	"github.com/zeromicro/go-zero/core/conf"
-	cs "github.com/zeromicro/go-zero/core/service"
+	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("f", "etc/user.yaml", "the config file")
+var configFile = flag.String("f", "etc/article.yaml", "the config file")
 
 func main() {
 	flag.Parse()
@@ -27,9 +27,9 @@ func main() {
 	ctx := svc.NewServiceContext(c)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		service.RegisterUserServer(grpcServer, server.NewUserServer(ctx))
+		pb.RegisterArticleServer(grpcServer, server.NewArticleServer(ctx))
 
-		if c.Mode == cs.DevMode || c.Mode == cs.TestMode {
+		if c.Mode == service.DevMode || c.Mode == service.TestMode {
 			reflection.Register(grpcServer)
 		}
 	})

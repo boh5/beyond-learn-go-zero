@@ -1,0 +1,56 @@
+package logic
+
+import (
+	"beyond-learn-go-zero/application/article/api/internal/code"
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"beyond-learn-go-zero/application/article/api/internal/svc"
+	"beyond-learn-go-zero/application/article/api/internal/types"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+const maxFileSize = 10 << 20
+
+type UploadCoverLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewUploadCoverLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UploadCoverLogic {
+	return &UploadCoverLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *UploadCoverLogic) UploadCover(req *http.Request) (resp *types.UploadCoverResponse, err error) {
+	_ = req.ParseMultipartForm(maxFileSize)
+	file, handler, err := req.FormFile("cover")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	objectKey := genFilename(handler.Filename)
+	_, err = l.svcCtx.CosClient.Object.Put(context.Background(), objectKey, file, nil)
+	if err != nil {
+		logx.Errorf("put object failed, err: %v", err)
+		return nil, code.PutBucketErr
+	}
+
+	return &types.UploadCoverResponse{CoverUrl: genFileURL(objectKey)}, nil
+}
+
+func genFilename(filename string) string {
+	return fmt.Sprintf("%d_%s", time.Now().UnixMilli(), filename)
+}
+
+func genFileURL(objectKey string) string {
+	return fmt.Sprintf("https://beyong-article-1254334479.cos.ap-chengdu.myqcloud.com/%s", objectKey)
+}
