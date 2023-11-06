@@ -97,17 +97,17 @@ func (l *VerificationLogic) incrVerificationCount(mobile string) error {
 }
 
 func getActivationCache(mobile string, rds *redis.Redis) (string, error) {
-	key := fmt.Sprintf(prefixActivation, mobile)
+	key := fmt.Sprintf(prefixVerification, mobile)
 	return rds.Get(key)
 }
 
 func saveActivationCache(mobile, code string, rds *redis.Redis) error {
-	key := fmt.Sprintf(prefixActivation, mobile)
+	key := fmt.Sprintf(prefixVerification, mobile)
 	return rds.Setex(key, code, expireActivation)
 }
 
 func delActivationCache(mobile, code string, rds *redis.Redis) error {
-	key := fmt.Sprintf(prefixActivation, mobile)
+	key := fmt.Sprintf(prefixVerification, mobile)
 	_, err := rds.Del(key)
 	return err
 }
